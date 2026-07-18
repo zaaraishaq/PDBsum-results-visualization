@@ -1,0 +1,23 @@
+========================================================================
+      Ramachandran / Backbone Geometry Summary
+========================================================================
+
+Analyzed Complex   : 1YCR_MDM2_p53
+
+NOTE: 'favored region' below is an illustrative simplified guide
+(rough alpha/beta/left-handed-helix boxes), not a validated
+statistical potential. For publication-grade Ramachandran
+validation, cross-check with MolProbity or the wwPDB validation report.
+
+p53_peptide (Chain B):
+  - Residues with complete phi/psi : 11
+  - In illustrative favored regions : 10 (90.9%)
+  - Outside favored regions          : 1 (9.1%)
+  - Outlier residues: Leu25
+
+MDM2 (Chain A):
+  - Residues with complete phi/psi : 83
+  - In illustrative favored regions : 71 (85.5%)
+  - Outside favored regions          : 12 (14.5%)
+  - Outlier residues: Val41, Gly42, Gln44, Asp46, Lys64, Arg65, Gln71, Cys77, Asn79, Leu85, Glu95, Asn106
+

@@ -1,0 +1,54 @@
+========================================================================
+      Docked Complex Interface Diagnostics Report
+========================================================================
+
+Analyzed Complex   : 1YCR_MDM2_p53.pdb
+Receptor Chain(s)  : A (MDM2)
+Ligand Chain(s)    : B (p53_peptide)
+
+1. STRUCTURAL INTERFACE GLOBAL STATISTICS
+------------------------------------------------------------------------
+  - Hydrogen Bonds Detected            : 11
+  - Salt Bridges Detected              : 1
+  - Non-Bonded/Hydrophobic Contacts    : 11
+  - Total Interface Residues (p53_peptide): 10
+  - Total Interface Residues (MDM2    ): 14
+
+2. INTERFACIAL CONTACTS REGISTRY
+------------------------------------------------------------------------
+A. HYDROGEN BONDS
+  - p53_peptide [Chain B] ASN 29 (ND2) <--- 3.44 A ---> MDM2 [Chain A] GLU 25 (OE1)
+  - p53_peptide [Chain B] ASN 29 (OD1) <--- 3.27 A ---> MDM2 [Chain A] THR 26 (OG1)
+  - p53_peptide [Chain B] GLU 28 (O) <--- 3.40 A ---> MDM2 [Chain A] LYS 51 (N)
+  - p53_peptide [Chain B] TRP 23 (NE1) <--- 2.83 A ---> MDM2 [Chain A] LEU 54 (O)
+  - p53_peptide [Chain B] SER 20 (OG) <--- 3.25 A ---> MDM2 [Chain A] MET 62 (SD)
+  - p53_peptide [Chain B] PHE 19 (N) <--- 3.02 A ---> MDM2 [Chain A] GLN 72 (OE1)
+  - p53_peptide [Chain B] GLU 17 (OE1) <--- 3.40 A ---> MDM2 [Chain A] LYS 94 (NZ)
+  - p53_peptide [Chain B] LEU 25 (O) <--- 3.17 A ---> MDM2 [Chain A] HIS 96 (NE2)
+  - p53_peptide [Chain B] ASN 29 (O) <--- 2.68 A ---> MDM2 [Chain A] TYR 100 (OH)
+  - p53_peptide [Chain B] ASN 29 (OXT) <--- 2.81 A ---> MDM2 [Chain A] TYR 100 (OH)
+  - p53_peptide [Chain B] ASN 29 (OXT) <--- 3.39 A ---> MDM2 [Chain A] TYR 104 (OH)
+
+B. SALT BRIDGES
+  - p53_peptide [Chain B] GLU 17 (OE1) <--- 3.40 A ---> MDM2 [Chain A] LYS 94 (NZ)
+
+C. NON-BONDED CONTACT ENVELOPE (up to 40 shown)
+  - p53_peptide [Chain B] PRO 27 ... 3.97 A ... MDM2 [Chain A] LEU 54
+  - p53_peptide [Chain B] LEU 26 ... 3.88 A ... MDM2 [Chain A] LEU 54
+  - p53_peptide [Chain B] TRP 23 ... 4.00 A ... MDM2 [Chain A] LEU 57
+  - p53_peptide [Chain B] PHE 19 ... 3.99 A ... MDM2 [Chain A] ILE 61
+  - p53_peptide [Chain B] TRP 23 ... 3.86 A ... MDM2 [Chain A] ILE 61
+  - p53_peptide [Chain B] PHE 19 ... 3.30 A ... MDM2 [Chain A] MET 62
+  - p53_peptide [Chain B] PHE 19 ... 3.85 A ... MDM2 [Chain A] VAL 75
+  - p53_peptide [Chain B] PHE 19 ... 3.57 A ... MDM2 [Chain A] VAL 93
+  - p53_peptide [Chain B] TRP 23 ... 3.83 A ... MDM2 [Chain A] VAL 93
+  - p53_peptide [Chain B] LEU 22 ... 3.33 A ... MDM2 [Chain A] VAL 93
+  - p53_peptide [Chain B] PRO 27 ... 3.67 A ... MDM2 [Chain A] TYR 100
+
+3. BINDING RESIDUE CATALOG
+------------------------------------------------------------------------
+p53_peptide Contacting Residues:
+  Glu17, Phe19, Ser20, Leu22, Trp23, Leu25, Leu26, Pro27, Glu28, Asn29
+
+MDM2 Contacting Residues:
+  Glu25, Thr26, Lys51, Leu54, Leu57, Ile61, Met62, Gln72, Val75, Val93, Lys94, His96, Tyr100, Tyr104
