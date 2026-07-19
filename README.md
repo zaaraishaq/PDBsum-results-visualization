@@ -20,6 +20,14 @@ standalone interactive 3D HTML viewer).
 
 No Biopython required -- just `numpy` and `matplotlib`.
 
+**New to the command line?** Skip straight to [GETTING_STARTED.md](GETTING_STARTED.md)
+for a no-jargon, step-by-step walkthrough, and run `python src/easy_start.py` instead
+of the CLI below -- it just asks plain questions instead of requiring flags.
+
+A browsable project page (with the example gallery) is also available via
+[index.html](index.html) once GitHub Pages is enabled for this repo (Settings -> Pages
+-> Deploy from branch -> `main` / root).
+
 ## Quick start
 
 ```bash
@@ -90,9 +98,12 @@ isn't the right split, specify chains explicitly.
 
 ```
 src/pdb_interface_analyzer.py   - the analyzer (single-file + batch CLI)
+src/easy_start.py               - question-and-answer version for beginners
 notebooks/                      - Google Colab notebook
 examples/data/                  - example input PDB (RCSB 1YCR: MDM2 / p53 peptide)
 examples/output/                - example output from running the script on it
+GETTING_STARTED.md              - plain-English walkthrough for first-time users
+index.html                      - browsable project page (enable GitHub Pages to view)
 requirements.txt
 LICENSE
 ```

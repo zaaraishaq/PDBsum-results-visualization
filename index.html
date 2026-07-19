@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDBsum-results-visualization &mdash; offline interface analysis</title>
+<meta name="description" content="A dependency-light, offline replacement for PDBsum-style interface diagnostics: hydrogen bonds, salt bridges, hydrophobic contacts, secondary structure, and Ramachandran plots for any docked or crystallographic protein complex.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f5f7fa;
+    --paper-raised: #ffffff;
+    --ink: #10151c;
+    --slate: #5b6472;
+    --line: #dbe2ea;
+    --hbond: #0ea5e9;
+    --salt: #ef4444;
+    --hydro: #f59e0b;
+    --helix: #ef4444;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'IBM Plex Sans', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { animation: none !important; transition: none !important; }
+  }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: inherit; }
+
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ---------- Nav ---------- */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(245, 247, 250, 0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  nav .wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+  }
+  .brand {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-decoration: none;
+    letter-spacing: -0.01em;
+  }
+  .brand span { color: var(--hbond); }
+  .nav-links { display: flex; gap: 28px; font-size: 0.88rem; font-weight: 500; }
+  .nav-links a { text-decoration: none; color: var(--slate); transition: color 0.15s; }
+  .nav-links a:hover { color: var(--ink); }
+  @media (max-width: 640px) { .nav-links { display: none; } }
+
+  /* ---------- Hero ---------- */
+  header.hero {
+    padding: 88px 0 64px;
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--slate);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 18px;
+  }
+  h1.headline {
+    font-family: var(--font-display);
+    font-size: clamp(2.2rem, 5vw, 3.4rem);
+    font-weight: 700;
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    margin: 0 0 20px;
+    max-width: 16ch;
+  }
+  .sub {
+    font-size: 1.1rem;
+    color: var(--slate);
+    max-width: 56ch;
+    margin: 0 0 36px;
+  }
+  .cta-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 64px; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.92rem;
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: transform 0.12s ease, background 0.15s ease;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn-primary { background: var(--ink); color: var(--paper); }
+  .btn-primary:hover { background: #262e39; }
+  .btn-secondary { background: transparent; color: var(--ink); border-color: var(--line); }
+  .btn-secondary:hover { background: var(--paper-raised); }
+
+  /* ---------- Signature: annotated ATOM record ---------- */
+  .atom-panel {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 28px 28px 22px;
+    box-shadow: 0 1px 2px rgba(16, 21, 28, 0.04);
+    overflow-x: auto;
+  }
+  .atom-panel .caption {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--slate);
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  pre.atom-lines {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    line-height: 2.05;
+    white-space: pre;
+    min-width: 640px;
+  }
+  .tag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 5px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    margin-left: 14px;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  .tag-hbond { background: rgba(14,165,233,0.13); color: #0369a1; }
+  .tag-salt { background: rgba(239,68,68,0.12); color: #b91c1c; }
+  .tag-hydro { background: rgba(245,158,11,0.15); color: #92400e; }
+  .hl-hbond { background: rgba(14,165,233,0.14); border-radius: 3px; }
+  .hl-salt { background: rgba(239,68,68,0.13); border-radius: 3px; }
+  .hl-hydro { background: rgba(245,158,11,0.16); border-radius: 3px; }
+  .dim { color: #a3adba; }
+
+  /* ---------- Section shell ---------- */
+  section { padding: 64px 0; border-top: 1px solid var(--line); }
+  .section-head { margin-bottom: 40px; max-width: 62ch; }
+  .section-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--slate);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+  }
+  h2 {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    margin: 0 0 12px;
+  }
+  .section-desc { color: var(--slate); margin: 0; }
+
+  /* ---------- Contact type cards ---------- */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 780px) { .card-grid { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 24px;
+    border-top: 3px solid var(--card-color, var(--hbond));
+  }
+  .card h3 {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    margin: 0 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--card-color, var(--hbond)); display: inline-block; }
+  .card p { color: var(--slate); font-size: 0.92rem; margin: 0 0 10px; }
+  .card .range { font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink); background: var(--paper); padding: 3px 8px; border-radius: 5px; display: inline-block; }
+
+  /* ---------- Gallery ---------- */
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+  @media (max-width: 860px) { .gallery-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .gallery-grid { grid-template-columns: 1fr; } }
+  figure {
+    margin: 0;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  figure img {
+    width: 100%;
+    display: block;
+    border-bottom: 1px solid var(--line);
+    background: #fff;
+  }
+  figcaption {
+    padding: 12px 14px;
+    font-size: 0.82rem;
+    color: var(--slate);
+  }
+  figcaption strong { color: var(--ink); display: block; font-size: 0.85rem; margin-bottom: 2px; }
+  .gallery-note {
+    margin-top: 18px;
+    font-size: 0.85rem;
+    color: var(--slate);
+  }
+  .gallery-note code { font-family: var(--font-mono); background: var(--paper-raised); border: 1px solid var(--line); padding: 1px 6px; border-radius: 4px; }
+
+  /* ---------- Get started paths ---------- */
+  .path-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 780px) { .path-grid { grid-template-columns: 1fr; } }
+  .path-card {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+  }
+  .path-num {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--slate);
+    margin-bottom: 10px;
+  }
+  .path-card h3 { font-family: var(--font-display); font-size: 1.1rem; margin: 0 0 8px; }
+  .path-card p { color: var(--slate); font-size: 0.9rem; flex-grow: 1; }
+  .path-card code.block {
+    display: block;
+    font-family: var(--font-mono);
+    background: var(--ink);
+    color: #d7dee6;
+    font-size: 0.78rem;
+    padding: 12px 14px;
+    border-radius: 8px;
+    margin: 10px 0 14px;
+    overflow-x: auto;
+  }
+  .path-card a.link {
+    font-weight: 600;
+    font-size: 0.88rem;
+    text-decoration: none;
+    color: var(--hbond);
+  }
+  .path-card a.link:hover { text-decoration: underline; }
+
+  /* ---------- Repo tree ---------- */
+  .tree {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 24px 28px;
+    white-space: pre;
+    overflow-x: auto;
+    color: #2b3542;
+  }
+  .tree .comment { color: var(--slate); }
+
+  /* ---------- Caveats ---------- */
+  .caveat-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+  .caveat-list li {
+    padding-left: 20px;
+    position: relative;
+    color: var(--slate);
+    font-size: 0.92rem;
+  }
+  .caveat-list li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--hydro);
+  }
+  .caveat-list strong { color: var(--ink); }
+
+  /* ---------- Footer ---------- */
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 40px 0 56px;
+    font-size: 0.85rem;
+    color: var(--slate);
+  }
+  footer .foot-row {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  footer a { color: var(--slate); text-decoration: underline; text-underline-offset: 2px; }
+  footer a:hover { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#top">pdb<span>_</span>interface<span>_</span>analyzer</a>
+    <div class="nav-links">
+      <a href="#computes">What it computes</a>
+      <a href="#gallery">Example output</a>
+      <a href="#start">Get started</a>
+      <a href="https://github.com/zaaraishaq/PDBsum-results-visualization">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <div class="eyebrow">Offline &middot; dependency-light &middot; PDBsum-style interface diagnostics</div>
+    <h1 class="headline">Every contact in a protein complex, read straight from the coordinates.</h1>
+    <p class="sub">
+      Give it any two-chain PDB file &mdash; a docked peptide, an antibody-antigen pair, an
+      AMP against its target &mdash; and it finds every hydrogen bond, salt bridge, and
+      hydrophobic contact between them, then draws the interface, the secondary structure,
+      and a Ramachandran plot. No Biopython, no PDBsum server required.
+    </p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="https://github.com/zaaraishaq/PDBsum-results-visualization">View on GitHub</a>
+      <a class="btn btn-secondary" href="https://colab.research.google.com/github/zaaraishaq/PDBsum-results-visualization/blob/main/notebooks/PDBsum_Interface_Analyzer_Colab.ipynb">Open in Colab</a>
+      <a class="btn btn-secondary" href="GETTING_STARTED.md">Getting started guide</a>
+    </div>
+
+    <div class="atom-panel">
+      <div class="caption">Real input &mdash; examples/data/1YCR_MDM2_p53.pdb</div>
+      <pre class="atom-lines"><span class="dim">ATOM    723  N   PHE B  19      32.143 -27.542 -11.625  1.00 22.45           N</span>
+<span class="hl-hydro">ATOM    727  CB  PHE B  19      32.674 -25.245 -10.916  1.00 12.04           C</span><span class="tag tag-hydro">hydrophobic &middot; Met62</span>
+<span class="dim">ATOM    756  CA  TRP B  23      27.021 -24.553  -7.803  1.00 20.10           C</span>
+<span class="hl-hbond">ATOM    764  NE1 TRP B  23      26.659 -20.002  -7.892  1.00  8.62           N</span><span class="tag tag-hbond">h-bond &middot; 2.83&Aring; &middot; Leu54</span>
+<span class="dim">ATOM    811  N   ASN B  29      16.925 -19.172  -2.791  1.00 37.74           N</span>
+<span class="hl-salt">ATOM    711  OE1 GLU B  17      32.302 -32.543  -7.098  1.00 60.54           O</span><span class="tag tag-salt">salt bridge &middot; 3.40&Aring; &middot; Lys94</span></pre>
+    </div>
+  </div>
+</header>
+
+<section id="computes">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-eyebrow">01 &nbsp;What it computes</div>
+      <h2>Three contact types, the same three PDBsum draws</h2>
+      <p class="section-desc">Every contact is geometry, not a black box &mdash; distances are checked directly against the coordinates in your file.</p>
+    </div>
+    <div class="card-grid">
+      <div class="card" style="--card-color: var(--hbond);">
+        <h3><span class="dot"></span>Hydrogen bonds</h3>
+        <p>Polar atom pairs (N/O/S) positioned close enough to plausibly hydrogen-bond.</p>
+        <span class="range">2.4&ndash;3.5 &Aring;</span>
+      </div>
+      <div class="card" style="--card-color: var(--salt);">
+        <h3><span class="dot"></span>Salt bridges</h3>
+        <p>Oppositely charged side-chain atoms (Asp/Glu against Lys/Arg/His) within range.</p>
+        <span class="range">&le; 4.0 &Aring;</span>
+      </div>
+      <div class="card" style="--card-color: var(--hydro);">
+        <h3><span class="dot"></span>Hydrophobic contacts</h3>
+        <p>Non-polar carbon atoms from hydrophobic residues packed against each other.</p>
+        <span class="range">&le; 4.0 &Aring;</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="gallery">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-eyebrow">02 &nbsp;Example output</div>
+      <h2>One structure, six views</h2>
+      <p class="section-desc">
+        Generated by running the script, unmodified, on PDB entry
+        <a href="https://www.rcsb.org/structure/1YCR">1YCR</a> &mdash; MDM2's
+        binding domain (chain A) with a 15-residue p53 peptide (chain B) docked
+        into it, chosen because it mirrors a short-peptide-vs-target case.
+      </p>
+    </div>
+    <div class="gallery-grid">
+      <figure>
+        <img src="examples/output/1YCR_MDM2_p53/interface_summary_bubble.png" alt="Bubble summary of interface contact counts" loading="lazy">
+        <figcaption><strong>Summary bubble</strong>At-a-glance bond counts per chain</figcaption>
+      </figure>
+      <figure>
+        <img src="examples/output/1YCR_MDM2_p53/interface_interactions_network.png" alt="Residue-to-residue interaction network diagram" loading="lazy">
+        <figcaption><strong>Interaction network</strong>Every contacting residue pair, PDBsum-ligplot style</figcaption>
+      </figure>
+      <figure>
+        <img src="examples/output/1YCR_MDM2_p53/interface_contact_heatmap.png" alt="Contact density heatmap between interface residues" loading="lazy">
+        <figcaption><strong>Contact heatmap</strong>Density of contact across residue pairs</figcaption>
+      </figure>
+      <figure>
+        <img src="examples/output/1YCR_MDM2_p53/docked_complex_3d_static.png" alt="Static 3D backbone trace of the docked complex" loading="lazy">
+        <figcaption><strong>3D backbone trace</strong>Static snapshot; an interactive HTML version ships alongside it</figcaption>
+      </figure>
+      <figure>
+        <img src="examples/output/1YCR_MDM2_p53/secondary_structure.png" alt="Secondary structure track showing helix, sheet and coil regions" loading="lazy">
+        <figcaption><strong>Secondary structure</strong>Helix / sheet / coil, read from the PDB header</figcaption>
+      </figure>
+      <figure>
+        <img src="examples/output/1YCR_MDM2_p53/ramachandran_plot.png" alt="Ramachandran plot of backbone phi and psi angles" loading="lazy">
+        <figcaption><strong>Ramachandran plot</strong>Backbone phi/psi angles per chain</figcaption>
+      </figure>
+    </div>
+    <p class="gallery-note">Plus a full text report and an interactive <code>docked_complex_3d.html</code> viewer &mdash; see <a href="examples/">examples/</a> for all of it, including the raw report text.</p>
+  </div>
+</section>
+
+<section id="start">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-eyebrow">03 &nbsp;Get started</div>
+      <h2>Three ways in, pick whichever fits you</h2>
+    </div>
+    <div class="path-grid">
+      <div class="path-card">
+        <div class="path-num">New to the command line</div>
+        <h3>Guided, no flags</h3>
+        <p>Download the project, install two libraries, then answer plain-English questions.</p>
+        <code class="block">python src/easy_start.py</code>
+        <a class="link" href="GETTING_STARTED.md">Read the full walkthrough &rarr;</a>
+      </div>
+      <div class="path-card">
+        <div class="path-num">Nothing to install</div>
+        <h3>Google Colab</h3>
+        <p>Fetch a structure by PDB ID or upload your own, run everything in the browser, download a zip of results.</p>
+        <code class="block">Open notebooks/PDBsum_Interface_Analyzer_Colab.ipynb</code>
+        <a class="link" href="https://colab.research.google.com/github/zaaraishaq/PDBsum-results-visualization/blob/main/notebooks/PDBsum_Interface_Analyzer_Colab.ipynb">Launch in Colab &rarr;</a>
+      </div>
+      <div class="path-card">
+        <div class="path-num">Comfortable with a terminal</div>
+        <h3>Direct CLI</h3>
+        <p>Full control: explicit chains, batch mode across a whole folder, custom labels.</p>
+        <code class="block">python src/pdb_interface_analyzer.py complex.pdb \
+  --ligand-chain B --receptor-chain A</code>
+        <a class="link" href="README.md">See all options &rarr;</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="layout">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-eyebrow">04 &nbsp;Repository layout</div>
+      <h2>Where everything lives</h2>
+    </div>
+    <div class="tree">src/pdb_interface_analyzer.py  <span class="comment"># the analyzer &mdash; single-file + batch CLI</span>
+src/easy_start.py              <span class="comment"># question-and-answer version for beginners</span>
+notebooks/                     <span class="comment"># Google Colab notebook</span>
+examples/data/                 <span class="comment"># example input: PDB 1YCR (MDM2 / p53 peptide)</span>
+examples/output/                <span class="comment"># example output from running the script on it</span>
+GETTING_STARTED.md             <span class="comment"># plain-English walkthrough</span>
+README.md
+requirements.txt
+LICENSE                        <span class="comment"># MIT</span></div>
+  </div>
+</section>
+
+<section id="caveats">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-eyebrow">05 &nbsp;Read before you cite</div>
+      <h2>What this is &mdash; and isn't</h2>
+    </div>
+    <ul class="caveat-list">
+      <li><strong>Secondary structure</strong> comes straight from the PDB file's HELIX/SHEET header records. Raw docking output usually has no header at all, so it will show as coil &mdash; that's expected, not a bug.</li>
+      <li><strong>Ramachandran "favored regions"</strong> shown here are a simplified, illustrative guide for an at-a-glance check, not a validated statistical potential. For publication-grade validation, cross-check with MolProbity or the structure's wwPDB validation report.</li>
+      <li><strong>Distance thresholds</strong> are the same geometry-only heuristics PDBsum/LIGPLOT use &mdash; they don't model hydrogen positions or electrostatics, so treat borderline contacts as candidates worth a closer look, not certainties.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-row">
+      <div>MIT licensed &middot; independent reimplementation, not affiliated with PDBsum or LIGPLOT.</div>
+      <div><a href="https://github.com/zaaraishaq/PDBsum-results-visualization">github.com/zaaraishaq/PDBsum-results-visualization</a></div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
